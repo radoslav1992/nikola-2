@@ -1,0 +1,44 @@
+---
+import Base from '../layouts/Base.astro';
+import { T, CATEGORIES, typeLabel, placeLabel, regionLabel, fmtPrice, listingPath, imgUrl, href } from '../lib/i18n.js';
+import { parseFilters, applyFilters } from '../lib/catalog.js';
+import { toMapPoints } from '../lib/geo.js';
+import { loadListings } from '../lib/data.js';
+
+const lang = Astro.locals.lang;
+const t = T[lang];
+const data = await loadListings(Astro.locals);
+const filters = parseFilters(Astro.url.searchParams);
+const filtered = applyFilters(data.items, filters);
+const points = toMapPoints(filtered).map((p) => ({
+  ...p,
+  url: href(lang, listingPath({ id: p.id, slug: p.slug, title: p.title })),
+  img: p.img ? imgUrl(p.img, 'medium') : null,
+  priceLabel: fmtPrice({ price: p.price, rent: p.rent }, lang),
+  typeLabel: typeLabel(p.type, lang),
+  placeLabel: `${placeLabel(p.place, lang)}${p.region ? ` · ${regionLabel(p.region, lang)}` : ''}`,
+}));
+const query = Astro.url.search.replace(/^\?/, '');
+const qsFor = (cat) => {
+  const p = new URLSearchParams(query);
+  if (cat) p.set('cat', cat); else p.delete('cat');
+  const s = p.toString();
+  return href(lang, '/karta') + (s ? `?${s}` : '');
+};
+const pointsJson = JSON.stringify(points).replace(/</g, '\\u003c');
+---
+<Base path="/karta" title={t.mapTitle2} description={t.mapSub2} updatedAt={data.fetchedAt} pageClass="mappage" leaflet noindex={Boolean(query)}>
+  <section class="map-screen">
+    <div id="map" data-map data-open={t.openListing} data-approx={t.approxLocation} data-exact={t.exactLocation}></div>
+    <div class="map-overlay top">
+      <span class="map-chip">{t.mapCount(points.length)}</span>
+      <a class="btn btn-dark" href={href(lang, '/imoti') + (query ? `?${query}` : '')}>{t.list}</a>
+    </div>
+    <div class="map-overlay bottom noscroll">
+      <a class:list={['chip', { on: !filters.cat }]} href={qsFor('')}>{t.fTypeAny}</a>
+      {CATEGORIES.map((c) => { const n = data.items.filter(c.test).length; return n ? <a class:list={['chip', { on: filters.cat === c.key }]} href={qsFor(c.key)}>{t[c.label]} <sup>{n}</sup></a> : null; })}
+    </div>
+    <script type="application/json" data-map-points set:html={pointsJson} />
+    <noscript><p class="empty">{lang === 'en' ? 'The map needs JavaScript.' : 'Картата изисква JavaScript.'} <a href={href(lang, '/imoti')}>{t.list}</a></p></noscript>
+  </section>
+</Base>

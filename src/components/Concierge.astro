@@ -1,0 +1,47 @@
+---
+/** AI concierge: 4-question wizard (client-side) + free text, results ranked by Workers AI via /api/ask. */
+import { T, REGION_COPY, href } from '../lib/i18n.js';
+import { matchItem } from '../lib/present.js';
+import MatchRow from './MatchRow.astro';
+const { items = [], regions = [] } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const initial = items.slice(0, 4).map((l) => matchItem(l, lang));
+const questions = t.questions.map((q, i) => (i === 2
+  ? { ...q, o: [...regions.filter((r) => r.key !== 'other').map((r) => REGION_COPY[r.key].name[lang]), t.anyRegion], keys: [...regions.filter((r) => r.key !== 'other').map((r) => r.key), ''] }
+  : q));
+const config = {
+  lang,
+  questions,
+  budgets: [[null, 30000], [30000, 60000], [60000, 120000], [120000, null], [null, null]],
+  cats: ['houses', 'plots', 'apartments', 'business', ''],
+  labels: { stepOf: t.stepOf, of: t.of, thinking: t.aiThinking, done: t.aiDone, none: t.aiNone, error: t.aiError, best: t.best, good: t.good, keyword: t.keyword, newListing: t.newListing, tellNikola: t.tellNikola, restart: t.restart, propsCount1: t.propsCount(1), propsCount: t.propsCount(2) },
+  contactHref: href(lang, '/') + '#nikola',
+  allHref: href(lang, '/imoti'),
+};
+---
+<section id="ai" class="concierge wrap">
+  <div class="concierge-panel" data-concierge>
+    <script type="application/json" data-concierge-config set:html={JSON.stringify(config).replace(/</g, '\\u003c')} />
+    <div class="concierge-left">
+      <div>
+        <span class="kicker-sage">✦ {t.aiKicker}</span>
+        <h2 class="display">{t.aiTitle}</h2>
+        <p class="concierge-body">{t.aiBody}</p>
+      </div>
+      <div class="chat" data-chat>
+        <noscript><a class="btn btn-sage" href={href(lang, '/imoti')}>{t.allProps} →</a></noscript>
+      </div>
+    </div>
+    <div class="concierge-right">
+      <div class="matches-head">
+        <span>{t.matches}</span>
+        <span class="sage-text" data-match-count>{initial.length} {t.propsCount(initial.length)}</span>
+      </div>
+      <div class="matches" data-matches>
+        {initial.map((m) => <MatchRow item={m} badge={t.newListing} dim />)}
+      </div>
+      <p class="matches-foot"><a href={href(lang, '/imoti')}>{t.allProps} →</a></p>
+    </div>
+  </div>
+</section>

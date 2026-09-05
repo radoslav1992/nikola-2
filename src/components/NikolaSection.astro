@@ -1,0 +1,44 @@
+---
+import { T, AGENT, href, telHref, waLink, viberLink, transliterate } from '../lib/i18n.js';
+import ReviewCard from './ReviewCard.astro';
+import ContactForm from './ContactForm.astro';
+const { areas = [], testimonials = [] } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const areaText = areas.map((a) => (lang === 'en' ? transliterate(a) : a)).join(', ');
+---
+<section id="nikola" class="nikola wrap">
+  <div class="portrait-col">
+    <img class="portrait" src="/img/agent.jpg" alt={AGENT.name[lang]} loading="lazy" width="800" height="1000">
+    <div class="quote-card">
+      <div class="quote">{t.quote}</div>
+      <div class="quote-by">{AGENT.name[lang]} <span>· {AGENT.role[lang]}</span></div>
+    </div>
+  </div>
+  <div class="nikola-col">
+    <h2 class="display">{t.nikolaTitle}</h2>
+    <p class="nikola-body">{t.nikolaBody}</p>
+    <div class="fact-grid">
+      <div class="fact-card"><div class="fact-label">{t.areas}</div><div class="fact-value">{areaText}</div></div>
+      <div class="fact-card"><div class="fact-label">{t.languages}</div><div class="fact-value">{AGENT.languages[lang]}</div></div>
+      <a class="fact-card link" href={telHref(AGENT.mobile)}><div class="fact-label">{t.phone}</div><div class="fact-value big">{AGENT.mobile}</div></a>
+      <div class="fact-card sand">
+        <div class="fact-label">{t.messengers}</div>
+        <div class="row">
+          <a class="pill-btn dark" href={waLink(lang === 'en' ? 'Hello, I found you on niimoti.com' : 'Здравейте, намерих ви в niimoti.com')} target="_blank" rel="noopener">WhatsApp</a>
+          <a class="pill-btn light" href={viberLink()}>Viber</a>
+        </div>
+      </div>
+    </div>
+    {testimonials.length > 0 && (
+      <div class="testimonials">
+        <div class="fact-label">{t.testimonials} <a class="muted" href={href(lang, '/otzivi')}>{t.allReviews}</a></div>
+        {testimonials.slice(0, 2).map((r) => <ReviewCard review={r} clamp />)}
+      </div>
+    )}
+    <div class="enquiry-home" id="contact">
+      <div class="fact-label">{t.tellMe}</div>
+      <ContactForm />
+    </div>
+  </div>
+</section>

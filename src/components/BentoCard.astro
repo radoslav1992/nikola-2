@@ -1,0 +1,29 @@
+---
+/** Small "New listing" bento card with a second photo + action buttons revealed on hover. */
+import { T, fmtPrice, placeLabel, metaBits, listingHref, imgUrl, href } from '../lib/i18n.js';
+const { listing: l, badge = null } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const [a, b] = l.images || [];
+const url = listingHref(l, lang);
+const meta = metaBits(l, lang);
+---
+<article class="bento-card hover-card" data-id={l.id}>
+  <div class="bento-media">
+    {a && <img class="img-a" src={imgUrl(a, 'medium')} alt={l.title} loading="lazy" width="600" height="450" />}
+    {b && <img class="img-b" src={imgUrl(b, 'medium')} alt="" loading="lazy" width="600" height="450" />}
+    <div class="tags"><span class="tag sage">{badge || t.newListing}</span></div>
+    <button type="button" class="fav" data-fav={l.id} aria-label={t.favourite}>♡</button>
+    <div class="hover-actions">
+      <a class="btn-light" href={url}>{t.viewProp}</a>
+      <a class="btn-glass" href={href(lang, '/') + '#ai'} data-ai-jump data-ai-about={l.id}>✦ {t.askAI}</a>
+    </div>
+  </div>
+  <div class="bento-foot">
+    <div class="min0">
+      <div class="bento-price">{fmtPrice(l, lang)}</div>
+      <div class="bento-meta">{[placeLabel(l.place, lang), ...meta.slice(0, 2)].join(' · ')}</div>
+    </div>
+    <a class="arrow" href={url} aria-label={t.viewProp}>↗</a>
+  </div>
+</article>

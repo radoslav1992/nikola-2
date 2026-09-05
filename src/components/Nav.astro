@@ -1,0 +1,32 @@
+---
+import { T, SITE, AGENT, href, telHref } from '../lib/i18n.js';
+const { path = '/' } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const links = [
+  [t.navProps, href(lang, '/imoti')],
+  [t.navRegions, href(lang, '/') + '#regions'],
+  [t.navAI, href(lang, '/') + '#ai'],
+  [t.navNikola, href(lang, '/') + '#nikola'],
+];
+---
+<header class="site-nav">
+  <nav class="nav-pill" aria-label="Main">
+    <a class="brand" href={href(lang, '/')}>{SITE.name}</a>
+    <div class="nav-links">
+      {links.map(([label, url]) => <a href={url}>{label}</a>)}
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <a href={href('bg', path)} class:list={{ on: lang === 'bg' }} hreflang="bg">BG</a>
+      <a href={href('en', path)} class:list={{ on: lang === 'en' }} hreflang="en">EN</a>
+    </div>
+    <a class="nav-call" href={telHref(AGENT.mobile)}>{t.navCall}</a>
+    <button class="nav-menu" type="button" aria-label={t.menu} aria-expanded="false" aria-controls="menu-sheet" data-menu>≡</button>
+  </nav>
+  <div class="menu-sheet" id="menu-sheet" hidden>
+    {links.map(([label, url]) => <a href={url}>{label}</a>)}
+    <a href={href(lang, '/karta')}>{t.navMap}</a>
+    <a href={href(lang, '/otzivi')}>{t.navReviews}</a>
+    <a href={telHref(AGENT.mobile)} class="menu-phone">{AGENT.mobile}</a>
+  </div>
+</header>

@@ -1,0 +1,10 @@
+---
+// /imot/123 → canonical /imot/123/slug
+import { listingPath, href } from '../../../lib/i18n.js';
+import { loadListings } from '../../../lib/data.js';
+const id = parseInt(Astro.params.id, 10);
+const data = await loadListings(Astro.locals);
+const l = data.items.find((x) => x.id === id);
+if (!l) return Astro.rewrite('/404');
+return Astro.redirect(href(Astro.locals.lang, listingPath(l)), 301);
+---

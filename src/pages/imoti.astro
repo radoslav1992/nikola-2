@@ -1,0 +1,92 @@
+---
+import Base from '../layouts/Base.astro';
+import PropertyCard from '../components/PropertyCard.astro';
+import Pagination from '../components/Pagination.astro';
+import { T, CATEGORIES, REGION_COPY, typeLabel, transliterate, href } from '../lib/i18n.js';
+import { parseFilters, applyFilters, paginate, distinctTypes, regionChips } from '../lib/catalog.js';
+import { groupByRegion } from '../lib/regions.js';
+import { loadListings } from '../lib/data.js';
+
+const lang = Astro.locals.lang;
+const t = T[lang];
+const data = await loadListings(Astro.locals);
+const all = data.items;
+const filters = parseFilters(Astro.url.searchParams);
+const filtered = applyFilters(all, filters);
+const pg = paginate(filtered, filters.page);
+const types = distinctTypes(all);
+const towns = regionChips(all);
+const regions = groupByRegion(all);
+
+const activeCat = CATEGORIES.find((c) => c.key === filters.cat);
+const title = filters.region && REGION_COPY[filters.region] ? REGION_COPY[filters.region].name[lang]
+  : activeCat ? t[activeCat.label]
+  : filters.type ? typeLabel(filters.type, lang)
+  : filters.loc ? (lang === 'en' ? transliterate(filters.loc) : filters.loc)
+  : t.catTitle;
+
+const qs = (overrides = {}) => {
+  const p = new URLSearchParams();
+  const f = { ...filters, ...overrides };
+  if (f.q) p.set('q', f.q);
+  if (f.loc) p.set('loc', f.loc);
+  if (f.type) p.set('type', f.type);
+  if (f.cat) p.set('cat', f.cat);
+  if (f.region) p.set('region', f.region);
+  if (f.deal) p.set('deal', f.deal);
+  if (f.budget) p.set('budget', f.budget);
+  else { if (f.min != null) p.set('min', f.min); if (f.max != null) p.set('max', f.max); }
+  if (f.sort && f.sort !== 'top') p.set('sort', f.sort);
+  if (f.page && f.page > 1) p.set('page', f.page);
+  const s = p.toString();
+  return href(lang, '/imoti') + (s ? `?${s}` : '');
+};
+const mapHref = href(lang, '/karta') + (Astro.url.search || '');
+const sortOpts = [['top', t.sortTop], ['price_asc', t.sortPriceAsc], ['price_desc', t.sortPriceDesc], ['area_asc', t.sortAreaAsc], ['area_desc', t.sortAreaDesc]];
+const budgets = [['', t.fBudgetAny], ['0-30000', t.fBudget1], ['30000-60000', t.fBudget2], ['60000-120000', t.fBudget3], ['120000-', t.fBudget4]];
+const hasFilters = filters.q || filters.loc || filters.type || filters.cat || filters.region || filters.deal || filters.min != null || filters.max != null;
+const path = '/imoti' + (filters.page > 1 ? `?page=${filters.page}` : '');
+---
+<Base path={path} title={title} description={`${t.catKicker}. ${t.results(all.length)}.`} updatedAt={data.fetchedAt} pageClass="catalogue" noindex={Boolean(filters.q)}>
+  <section class="wrap cat-head">
+    <div>
+      <div class="kicker">{t.catKicker}</div>
+      <h1 class="display">{title}</h1>
+    </div>
+    <div class="cat-tools">
+      <span class="muted">{t.results(pg.total)}{filters.q && ` · „${filters.q}“`}</span>
+      {hasFilters && <a class="btn btn-white" href={href(lang, '/imoti')}>{t.clearFilters}</a>}
+      <a class="btn btn-white" href={mapHref}>{t.map} ↗</a>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="chips noscroll">
+      <a class:list={['chip', { on: !filters.cat && !filters.region }]} href={qs({ cat: '', region: '', page: 1 })}>{t.fTypeAny}</a>
+      {CATEGORIES.map((c) => { const n = all.filter(c.test).length; return n ? <a class:list={['chip', { on: filters.cat === c.key }]} href={qs({ cat: c.key, type: '', page: 1 })}>{t[c.label]} <sup>{n}</sup></a> : null; })}
+      {regions.map((g) => <a class:list={['chip', { on: filters.region === g.key }]} href={qs({ region: g.key, page: 1 })}>{REGION_COPY[g.key].name[lang]} <sup>{g.count}</sup></a>)}
+    </div>
+    <details class="filters" open={hasFilters && !filters.cat && !filters.region ? true : undefined}>
+      <summary>{t.filters}</summary>
+      <form method="get" action={href(lang, '/imoti')} class="filters-form">
+        <label>{t.fLocation}<input name="loc" value={filters.loc} placeholder={t.fLocationPh} list="loc-list"></label>
+        <datalist id="loc-list">{towns.map((r) => <option value={r.key}>{lang === 'en' ? transliterate(r.label) : r.label}</option>)}</datalist>
+        <label>{t.fType}<select name="type"><option value="">{t.fTypeAny}</option>{types.map((ty) => <option value={ty} selected={ty === filters.type}>{typeLabel(ty, lang)}</option>)}</select></label>
+        <label>{t.fBudget}<select name="budget">{budgets.map(([v, l]) => <option value={v} selected={v === filters.budget}>{l}</option>)}</select></label>
+        <label>{t.fDeal}<select name="deal"><option value="">{t.fDealAny}</option><option value="sale" selected={filters.deal === 'sale'}>{t.fSale}</option><option value="rent" selected={filters.deal === 'rent'}>{t.fRent}</option></select></label>
+        <label>{t.fSort}<select name="sort">{sortOpts.map(([v, l]) => <option value={v} selected={v === filters.sort}>{l}</option>)}</select></label>
+        {filters.cat && <input type="hidden" name="cat" value={filters.cat} />}
+        {filters.region && <input type="hidden" name="region" value={filters.region} />}
+        {filters.q && <input type="hidden" name="q" value={filters.q} />}
+        <button type="submit" class="btn btn-dark">{t.fSearch}</button>
+      </form>
+    </details>
+  </section>
+
+  <section class="wrap cat-results">
+    {pg.items.length ? (
+      <div class="pgrid">{pg.items.map((l, i) => <PropertyCard listing={l} eager={i < 3} />)}</div>
+    ) : <p class="empty">{t.noResults}</p>}
+    <Pagination page={pg.page} pages={pg.pages} buildHref={(n) => qs({ page: n })} />
+  </section>
+</Base>

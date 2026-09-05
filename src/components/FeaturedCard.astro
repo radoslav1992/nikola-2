@@ -1,0 +1,33 @@
+---
+/** Large featured bento tile. */
+import { T, fmtPrice, placeLabel, fmtArea, listingTags, listingHref, imgUrl, href } from '../lib/i18n.js';
+const { listing: l } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const [a, b] = l.images || [];
+const url = listingHref(l, lang);
+const tags = listingTags(l, lang).slice(0, 3);
+const line2 = [l.area != null ? fmtArea(l.area, lang) : null, l.plotArea != null ? `${lang === 'en' ? 'plot' : 'двор'} ${fmtArea(l.plotArea, lang)}` : null, l.bedrooms != null ? `${l.bedrooms} ${lang === 'en' ? 'bd' : 'спални'}` : null].filter(Boolean).join(' · ');
+---
+<article class="featured hover-card" data-id={l.id}>
+  {a && <img class="img-a" src={imgUrl(a, 'big')} alt={l.title} fetchpriority="high" width="1200" height="800" />}
+  {b && <img class="img-b" src={imgUrl(b, 'big')} alt="" loading="lazy" width="1200" height="800" />}
+  <div class="shade"></div>
+  <div class="tags">
+    <span class="tag light">{t.featured}</span>
+    {tags.map((tag) => <span class="tag dark">{tag}</span>)}
+  </div>
+  <button type="button" class="fav" data-fav={l.id} aria-label={t.favourite}>♡</button>
+  <div class="featured-foot">
+    <div class="min0">
+      <div class="featured-price">{fmtPrice(l, lang)}</div>
+      <div class="featured-title">{l.title} · {placeLabel(l.place, lang)}</div>
+      {line2 && <div class="featured-meta">{line2}</div>}
+    </div>
+    <div class="hover-actions inline">
+      <a class="btn-light" href={url}>{t.viewProp}</a>
+      <a class="btn-glass" href={href(lang, '/') + '#ai'} data-ai-jump data-ai-about={l.id}>✦ {t.askAI}</a>
+    </div>
+  </div>
+  <a class="featured-arrow" href={url} aria-label={t.viewProp}>↗</a>
+</article>

@@ -1,0 +1,25 @@
+{
+  "name": "ni-imoti",
+  "version": "2.0.0",
+  "private": true,
+  "description": "НИ Имоти — сайт на брокер Никола Иванов (niimoti.com). Cloudflare Worker + static assets, дизайн „Find Your Place“.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "node --test test/*.test.js",
+    "check": "npm test && astro build && wrangler deploy --dry-run",
+    "deploy": "astro build && wrangler deploy",
+    "seed": "node scripts/build-seed.mjs",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@astrojs/cloudflare": "^14.3.0",
+    "astro": "^7.3.1",
+    "wrangler": "^4.129.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
