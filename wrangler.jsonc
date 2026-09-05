@@ -45,7 +45,7 @@
   },
 
   /* ── OPTIONAL BUT RECOMMENDED: persistent listings cache + contact-form leads ────────
-   * 1. Cloudflare dashboard → Storage & Databases → KV → Create namespace, name: ni-imoti
+   * 1. Cloudflare dashboard → Storage & Databases → KV → Create namespace, name: ni-imoti-2
    * 2. Copy its ID, uncomment the block below, paste the ID, commit & push.
    * Without KV the Worker still works (it uses the edge cache + the bundled seed data),
    * but the listings are re-fetched more often and contact-form leads are not stored.

@@ -39,7 +39,7 @@ Cloudflare конзолата чрез GitHub интеграцията.
 Без KV сайтът работи (ползва edge-кеша на Cloudflare и вградения seed от 24 обяви), но обявите се презареждат по-често,
 а запитванията от формата не се пазят никъде (само се изпращат по имейл, ако е настроен).
 
-1. **Storage & Databases → KV → Create namespace** → име `ni-imoti`.
+1. **Storage & Databases → KV → Create namespace** → име `ni-imoti-2` (отделен от този на nikola-1, за да не си презаписват кеша).
 2. Копирайте **Namespace ID**, отблокирайте блока `kv_namespaces` в `wrangler.jsonc`, поставете ID-то, commit + push.
 
 > Важно: с GitHub интеграцията `wrangler.jsonc` е източникът на истина. Bindings, добавени само през таба *Bindings*
