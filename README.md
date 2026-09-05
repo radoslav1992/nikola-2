@@ -16,11 +16,11 @@ Cloudflare конзолата чрез GitHub интеграцията.
 1. Влезте в <https://dash.cloudflare.com> → **Workers & Pages** → **Create** → таб **Workers** → **Import a repository**.
 2. Свържете GitHub акаунта и изберете това repo (`radoslav1992/nikola-2`) и branch-а, който искате да деплойвате.
 3. Настройки на билда:
-   - **Project name:** `ni-imoti`
+   - **Project name:** `ni-imoti-2`
    - **Build command:** `npm run build`
    - **Deploy command:** `npx wrangler deploy`
    - **Root directory:** `/`
-4. **Deploy.** След 1–2 минути сайтът е на `https://ni-imoti.<вашият-акаунт>.workers.dev`.
+4. **Deploy.** След 1–2 минути сайтът е на `https://ni-imoti-2.<вашият-акаунт>.workers.dev`.
    Всеки следващ push към branch-а деплойва автоматично; pull request-ите получават preview URL.
 
 > `astro build` записва готовия Worker в `dist/server` заедно с `dist/server/wrangler.json`, а `wrangler deploy` го намира сам
@@ -29,7 +29,7 @@ Cloudflare конзолата чрез GitHub интеграцията.
 ### Домейн niimoti.com
 
 Домейнът трябва да е добавен в същия Cloudflare акаунт (Websites → Add a domain → сменете nameserver-ите при регистратора).
-След това: **Workers & Pages → ni-imoti → Settings → Domains & Routes → Add → Custom domain** → `niimoti.com`, и още веднъж за
+След това: **Workers & Pages → ni-imoti-2 → Settings → Domains & Routes → Add → Custom domain** → `niimoti.com`, и още веднъж за
 `www.niimoti.com`. Worker-ът сам пренасочва `www` към `niimoti.com`. DNS и SSL се създават автоматично.
 
 Алтернатива: отблокирайте секцията `routes` в `wrangler.jsonc` и push-нете.

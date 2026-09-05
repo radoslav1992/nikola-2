@@ -8,7 +8,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ni-imoti",
+  "name": "ni-imoti-2",
   // Custom entry: Astro's request handler + the `scheduled` handler that re-scrapes suprimmo.bg.
   "main": "src/worker.js",
   "compatibility_date": "2025-10-01",
