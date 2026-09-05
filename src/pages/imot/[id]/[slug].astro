@@ -1,0 +1,153 @@
+---
+import Base from '../../../layouts/Base.astro';
+import EnquiryAside from '../../../components/EnquiryAside.astro';
+import PropertyCard from '../../../components/PropertyCard.astro';
+import { T, SITE, typeLabel, placeLabel, regionLabel, fmtPrice, fmtArea, fmtNumber, listingTags, listingPath, imgUrl, href } from '../../../lib/i18n.js';
+import { similarTo, townOf } from '../../../lib/catalog.js';
+import { loadListings, loadDetail, siteUrl } from '../../../lib/data.js';
+
+const lang = Astro.locals.lang;
+const t = T[lang];
+const id = parseInt(Astro.params.id, 10);
+const data = await loadListings(Astro.locals);
+const l = data.items.find((x) => x.id === id);
+if (!l) return Astro.rewrite('/404');
+const canonicalPath = listingPath(l);
+if (Astro.locals.path !== canonicalPath) return Astro.redirect(href(lang, canonicalPath), 301);
+
+const detail = await loadDetail(Astro.locals, l);
+const images = [...(detail?.images || [])];
+for (const f of l.images || []) if (!images.includes(f)) images.push(f);
+const main = images[0];
+const side = images.slice(1, 4);
+const paragraphs = detail?.paragraphs?.length ? detail.paragraphs : [];
+const town = townOf(l.place);
+const similar = similarTo(data.items, l, 3);
+const exact = detail?.coords && !detail.coords.approx ? detail.coords : null;
+const coords = exact || (l.coords && Number.isFinite(l.coords.lat) ? l.coords : null);
+const mapUrl = exact
+  ? `https://www.openstreetmap.org/?mlat=${exact.lat}&mlon=${exact.lng}#map=15/${exact.lat}/${exact.lng}`
+  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${town}, ${l.region}, България`)}`;
+
+const facts = [
+  l.area != null ? { k: l.plotArea != null ? t.fHouse : t.fArea, v: fmtArea(l.area, lang) } : null,
+  l.plotArea != null ? { k: t.fPlot, v: fmtArea(l.plotArea, lang) } : null,
+  l.bedrooms != null ? { k: t.fBedrooms, v: l.bedrooms } : null,
+  l.floors != null ? { k: t.fFloors, v: l.floors } : { k: t.fTypeLabel, v: typeLabel(l.type, lang) },
+].filter(Boolean).slice(0, 4);
+
+const chars = [{ k: t.fTypeLabel, v: typeLabel(l.type, lang) }, { k: t.ref, v: l.ref }];
+if (l.region) chars.push({ k: t.fRegion, v: regionLabel(l.region, lang) });
+if (l.floors != null && facts.some((f) => f.k === t.fFloors) === false) chars.push({ k: t.fFloors, v: l.floors });
+if (l.akt16) chars.push({ k: t.fAkt16, v: t.fAkt16Val });
+if (l.pricePerSqm != null) chars.push({ k: t.fPricePerSqm, v: `€${l.pricePerSqm}` });
+if (l.oldPrice) chars.push({ k: t.fOldPrice, v: `€${fmtNumber(l.oldPrice)}` });
+if (l.discount) chars.push({ k: t.fDiscount, v: `-${l.discount}%` });
+for (const f of detail?.features || []) {
+  if (chars.length >= 14) break;
+  if (!chars.some((x) => x.k.toLowerCase() === f.label.toLowerCase())) chars.push({ k: f.label, v: f.value });
+}
+const pricePer = l.pricePerSqm != null ? l.pricePerSqm : l.price && l.area ? Math.round(l.price / l.area) : null;
+const site = siteUrl();
+const jsonLd = [{
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateListing',
+  name: l.title,
+  url: site + href(lang, canonicalPath),
+  image: images.slice(0, 5).map((f) => site + imgUrl(f, 'big')),
+  description: paragraphs[0] || `${l.type}, ${l.place}, ${l.region}`,
+  offers: { '@type': 'Offer', price: l.price, priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },
+  address: { '@type': 'PostalAddress', addressLocality: town, addressRegion: l.region, addressCountry: 'BG' },
+}];
+const desc = paragraphs[0]?.slice(0, 160) || `${typeLabel(l.type, lang)} · ${placeLabel(l.place, lang)} · ${fmtPrice(l, lang)}`;
+const galleryJson = JSON.stringify(images.map((f) => imgUrl(f, 'big'))).replace(/</g, '\\u003c');
+---
+<Base path={canonicalPath} title={l.title} description={desc} jsonLd={jsonLd} image={main ? imgUrl(main, 'big') : null} updatedAt={data.fetchedAt} pageClass="property" leaflet={Boolean(coords)}>
+  <div class="wrap prop-wrap">
+    <a class="back" href={href(lang, '/imoti')}>← {t.back}</a>
+
+    <div class:list={['collage', { single: side.length === 0 }]} data-gallery>
+      <button type="button" class="collage-main" data-gallery-index="0">
+        {main ? <img src={imgUrl(main, 'big')} alt={l.title} fetchpriority="high" width="1200" height="800" /> : <div class="noimg" />}
+      </button>
+      {side.map((f, i) => <button type="button" class="collage-side" data-gallery-index={i + 1}><img src={imgUrl(f, 'medium')} alt={`${l.title} ${i + 2}`} loading="lazy" width="600" height="400" /></button>)}
+      <div class="tags">{listingTags(l, lang).slice(0, 3).map((tag) => <span class="tag light">{tag}</span>)}</div>
+      <div class="collage-actions">
+        <button type="button" class="fav round" data-fav={l.id} aria-label={t.favourite}>♡</button>
+        {images.length > 1 && <button type="button" class="btn btn-glass-light" data-gallery-index="0">{t.allPhotos} · {images.length}</button>}
+      </div>
+      <script type="application/json" data-gallery-images set:html={galleryJson} />
+    </div>
+
+    <div class="prop-cols">
+      <div class="prop-main">
+        <header>
+          <div class="muted">{placeLabel(l.place, lang)}{l.region && `, ${regionLabel(l.region, lang)}`}{l.rent && ` · ${t.statusRent}`}</div>
+          <h1 class="display">{l.title}</h1>
+          <div class="price-row">
+            <span class="price">{l.oldPrice && <s>€{fmtNumber(l.oldPrice)}</s>} {fmtPrice(l, lang)}</span>
+            {pricePer && !l.rent && <span class="muted">{t.pricePer(fmtNumber(pricePer))}</span>}
+          </div>
+          <div class="fact-cards">{facts.map((f) => <div class="fact-card"><div class="fact-label">{f.k}</div><div class="fact-value big">{f.v}</div></div>)}</div>
+        </header>
+
+        <section>
+          <h2>{t.descTitle}</h2>
+          <div class="prose">
+            {paragraphs.length ? paragraphs.map((p) => <p>{p}</p>) : <p class="muted">{t.descMissing}</p>}
+            <p><a class="link" href={l.url} target="_blank" rel="noopener nofollow">{t.descSource}</a></p>
+          </div>
+        </section>
+
+        <section>
+          <h2>{t.charTitle}</h2>
+          <div class="chars">{chars.map((c) => <div class="char"><span class="muted">{c.k}</span><span>{c.v}</span></div>)}</div>
+        </section>
+
+        {detail?.youtube && <section><h2>{t.videoTitle}</h2><div class="video"><iframe src={`https://www.youtube-nocookie.com/embed/${detail.youtube}`} title={t.videoTitle} loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></section>}
+
+        <section>
+          <h2>{t.mapTitle}</h2>
+          {coords ? (
+            <div class="propmap" data-propmap data-lat={coords.lat} data-lng={coords.lng} data-approx={coords.approx ? '1' : '0'}>
+              <span class="map-chip">{coords.approx ? t.approxLocation : t.exactLocation} · {t.mapSub}</span>
+            </div>
+          ) : (
+            <a class="map-card" href={mapUrl} target="_blank" rel="noopener"><span class="map-chip">{t.approxLocation}</span><span>{placeLabel(l.place, lang)} — {t.mapOpen} ↗</span></a>
+          )}
+          <p class="muted small map-links"><a href={mapUrl} target="_blank" rel="noopener">{t.mapOpen} ↗</a> · <a href={href(lang, `/karta?loc=${encodeURIComponent(town)}`)}>{t.mapTitle2} →</a></p>
+        </section>
+
+        <section class="fit" data-fit data-listing={l.id}>
+          <div>
+            <span class="kicker-sage">✦ AI</span>
+            <h2 class="display">{t.fitTitle}</h2>
+            <p class="fit-body">{t.fitBody}</p>
+            <div class="fit-qs">{t.fitQs.map((q) => <button type="button" class="fit-q" data-fit-q>{q}</button>)}</div>
+          </div>
+          <div class="fit-chat">
+            <div class="fit-thread" data-fit-thread></div>
+            <form class="fit-form" data-fit-form><input name="q" placeholder={t.fitInput} maxlength="400" required><button type="submit" aria-label={t.askAI}>↗</button></form>
+          </div>
+        </section>
+      </div>
+
+      <EnquiryAside listing={l} />
+    </div>
+
+    {similar.length > 0 && (
+      <section class="similar">
+        <h2 class="display">{t.similarTitle}</h2>
+        <div class="pgrid">{similar.map((s) => <PropertyCard listing={s} />)}</div>
+      </section>
+    )}
+  </div>
+
+  <div class="lightbox" data-lightbox hidden>
+    <button type="button" class="lb-close" data-lb-close aria-label="Close">×</button>
+    <button type="button" class="lb-prev" data-lb-prev aria-label={t.prev}>‹</button>
+    <img alt="">
+    <button type="button" class="lb-next" data-lb-next aria-label={t.next}>›</button>
+    <div class="lb-count"></div>
+  </div>
+</Base>

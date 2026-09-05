@@ -1,0 +1,22 @@
+---
+import { T, fmtDate, transliterate, initials, href } from '../lib/i18n.js';
+const { review: r, listings = null, clamp = false } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const original = r.lang || 'bg';
+const translated = original !== lang && r[`text_${lang}`];
+const text = translated || r.text;
+const note = translated ? t.translatedFrom[original] : '';
+const name = !r.name ? t.anonymous : lang === 'en' && /[а-я]/i.test(r.name) ? transliterate(r.name) : r.name;
+const propId = r.property ? parseInt(String(r.property).replace(/\D/g, ''), 10) : null;
+const listing = propId && listings ? listings.find((l) => l.id === propId || l.ref.replace(/\D/g, '') === String(propId)) : null;
+const metaParts = [r.date ? fmtDate(r.date, lang) : null, note || null].filter(Boolean);
+---
+<article class="review" lang={translated ? lang : original}>
+  <div class="review-avatar" aria-hidden="true">{initials(r.name, lang)}</div>
+  <div class="min0">
+    {r.rating && <div class="review-stars" aria-label={`${r.rating}/5`}>{'★'.repeat(Math.round(r.rating))}{'☆'.repeat(5 - Math.round(r.rating))}</div>}
+    <p class:list={['review-text', { clamp }]}>{text}</p>
+    <div class="review-name">{name}{metaParts.length > 0 && <span class="muted"> · {metaParts.join(' · ')}</span>}{r.property && <span class="muted"> · {listing ? <a href={href(lang, `/imot/${listing.id}/${listing.slug}`)}>{t.reviewProperty} {r.property}</a> : `${t.reviewProperty} ${r.property}`}</span>}</div>
+  </div>
+</article>

@@ -1,0 +1,10 @@
+---
+import { T, AGENT, href, telHref, waLink } from '../lib/i18n.js';
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+---
+<div class="mobilebar">
+  <a href={telHref(AGENT.mobile)}>{t.call}</a>
+  <a href={waLink(lang === 'en' ? 'Hello, I found you on niimoti.com' : 'Здравейте, намерих ви в niimoti.com')} target="_blank" rel="noopener">{t.message}</a>
+  <a href={href(lang, '/') + '#ai'} class="primary" data-ai-jump>✦ {t.askAI}</a>
+</div>

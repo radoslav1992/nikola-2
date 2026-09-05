@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import ReviewCard from '../components/ReviewCard.astro';
+import { T } from '../lib/i18n.js';
+import { FEEDBACK_URL } from '../lib/testimonials.js';
+import { loadListings, loadTestimonials } from '../lib/data.js';
+
+const lang = Astro.locals.lang;
+const t = T[lang];
+const [data, testimonials] = await Promise.all([loadListings(Astro.locals), loadTestimonials(Astro.locals)]);
+const items = testimonials?.items || [];
+const jsonLd = items.length ? [{
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateAgent',
+  name: 'Никола Иванов',
+  review: items.slice(0, 20).map((r) => ({
+    '@type': 'Review',
+    author: { '@type': 'Person', name: r.name || t.anonymous },
+    ...(r.date ? { datePublished: r.date } : {}),
+    ...(r.rating ? { reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 } } : {}),
+    reviewBody: r.text,
+  })),
+}] : [];
+---
+<Base path="/otzivi" title={t.reviewsTitle} description={t.reviewsSub} jsonLd={jsonLd} updatedAt={testimonials?.fetchedAt} pageClass="reviews">
+  <section class="wrap cat-head">
+    <div>
+      <div class="kicker">{t.testimonials}</div>
+      <h1 class="display">{t.reviewsTitle}</h1>
+      <p class="muted lead">{t.reviewsSub}</p>
+    </div>
+    <div class="cat-tools">
+      <span class="muted">{t.reviewsCount(items.length)}</span>
+      <a class="btn btn-white" href={FEEDBACK_URL} target="_blank" rel="noopener nofollow">{t.reviewsSource}</a>
+    </div>
+  </section>
+  <section class="wrap reviews-list">
+    {items.length ? items.map((r) => <ReviewCard review={r} listings={data.items} />) : <p class="empty">{t.reviewsEmpty}</p>}
+  </section>
+</Base>

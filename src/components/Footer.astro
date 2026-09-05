@@ -1,0 +1,23 @@
+---
+import { T, SITE, AGENT, href, fmtDate } from '../lib/i18n.js';
+const { updatedAt = null } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+---
+<footer class="site-footer">
+  <div class="foot-top">
+    <span class="brand">{SITE.name}</span>
+    <div class="foot-links">
+      <a href={href(lang, '/imoti')}>{t.footProp}</a>
+      <a href={href(lang, '/karta')}>{t.footMap}</a>
+      <a href={href(lang, '/otzivi')}>{t.footReviews}</a>
+      <a href={href(lang, '/') + '#nikola'}>{t.navNikola}</a>
+    </div>
+    <span>© {new Date().getUTCFullYear()} {AGENT.name[lang]} · {t.footNote}</span>
+  </div>
+  <p class="foot-note">
+    {t.footSource} <a href={AGENT.sourceUrl} rel="noopener" target="_blank">SUPRIMMO ↗</a>{updatedAt && ` · ${t.footUpdated}: ${fmtDate(updatedAt, lang)}`}
+    · {lang === 'en' ? 'Map data' : 'Карта'}: © <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>
+    · {AGENT.address[lang]} · {SITE.domain}
+  </p>
+</footer>

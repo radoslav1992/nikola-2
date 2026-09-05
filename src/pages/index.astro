@@ -1,0 +1,94 @@
+---
+import Base from '../layouts/Base.astro';
+import FeaturedCard from '../components/FeaturedCard.astro';
+import BentoCard from '../components/BentoCard.astro';
+import Concierge from '../components/Concierge.astro';
+import Regions from '../components/Regions.astro';
+import NikolaSection from '../components/NikolaSection.astro';
+import { T, SITE, AGENT, REGION_COPY, href, imgUrl } from '../lib/i18n.js';
+import { regionChips } from '../lib/catalog.js';
+import { groupByRegion } from '../lib/regions.js';
+import { loadListings, loadTestimonials, siteUrl } from '../lib/data.js';
+
+const lang = Astro.locals.lang;
+const t = T[lang];
+const [data, testimonials] = await Promise.all([loadListings(Astro.locals), loadTestimonials(Astro.locals)]);
+const items = data.items;
+
+const featured = items.find((l) => /къщ|вил/i.test(l.type) && (l.images?.length || 0) >= 2) || items.find((l) => l.images?.length) || items[0];
+const small = items.filter((l) => l !== featured && l.images?.length).slice(0, 2);
+const heroImg = featured?.images?.[0] || null;
+const regions = groupByRegion(items);
+const topRegion = regions.filter((r) => r.key !== 'other').sort((a, b) => b.count - a.count)[0] || regions[0];
+const topRegionImg = topRegion?.items.find((l) => l.images?.length)?.images?.[1] || topRegion?.items.find((l) => l.images?.length)?.images?.[0];
+const areas = regionChips(items).slice(0, 8).map((r) => r.label);
+
+const jsonLd = [{
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateAgent',
+  name: `${SITE.name} — ${AGENT.name.bg}`,
+  alternateName: SITE.nameLatin,
+  url: siteUrl() + href(lang, '/'),
+  image: siteUrl() + '/img/agent.jpg',
+  telephone: AGENT.mobile,
+  address: { '@type': 'PostalAddress', streetAddress: 'ул. Никола Пиколо 23', addressLocality: 'Велико Търново', postalCode: '5000', addressCountry: 'BG' },
+  areaServed: areas,
+  knowsLanguage: ['bg', 'en', 'es'],
+}];
+---
+<Base path="/" description={t.metaHome} jsonLd={jsonLd} image={heroImg ? imgUrl(heroImg, 'big') : null} updatedAt={data.fetchedAt} pageClass="home" hero>
+  <section class="hero">
+    {heroImg && <img class="hero-img" src={imgUrl(heroImg, 'big')} alt="" fetchpriority="high" width="1600" height="1000" />}
+    <div class="hero-shade"></div>
+    <div class="hero-foot">
+      <h1 class="hero-title">{t.heroTitle}</h1>
+      <form class="search-card" data-ai-free>
+        <div class="search-head"><span>{t.searchTitle}</span><span class="ai-badge">✦ AI</span></div>
+        <textarea name="q" rows="3" placeholder={t.searchPlaceholder} maxlength="400"></textarea>
+        <div class="search-actions">
+          <button type="submit" class="btn btn-dark">✦ {t.findAI}</button>
+          <a class="btn btn-white" href={href(lang, '/imoti')}>{t.useFilters}</a>
+        </div>
+        <div class="pills">{t.pills.map((p) => <button type="button" class="pill" data-pill>{p}</button>)}</div>
+      </form>
+    </div>
+  </section>
+
+  <section id="bento" class="bento wrap">
+    <div class="section-head">
+      <h2 class="display">{t.bentoTitle}</h2>
+      <a class="btn btn-white" href={href(lang, '/imoti')}>{t.allProps} →</a>
+    </div>
+    <div class="bento-grid">
+      {featured && <FeaturedCard listing={featured} />}
+      {small.map((l) => <BentoCard listing={l} />)}
+      {topRegion && (
+        <a class="region-tile" href={href(lang, `/imoti?region=${topRegion.key}`)}>
+          {topRegionImg && <img src={imgUrl(topRegionImg, 'medium')} alt="" loading="lazy" width="600" height="600" />}
+          <span class="region-tile-text">
+            <span class="fact-label light">{t.region}</span>
+            <span class="region-tile-name">{REGION_COPY[topRegion.key].name[lang]}</span>
+            <span class="region-tile-count">{topRegion.count} {t.propsCount(topRegion.count)} →</span>
+          </span>
+        </a>
+      )}
+      <a class="nikola-tile" href="#nikola">
+        <span class="nikola-tile-head">
+          <img src="/img/agent.jpg" alt="" width="56" height="56" loading="lazy">
+          <span><span class="fact-label light">{t.broker}</span><span class="nikola-tile-name">{AGENT.name[lang]}</span></span>
+        </span>
+        <span class="nikola-tile-ask">{t.askNikola}</span>
+        <span class="nikola-tile-foot"><span class="pill-btn sage">WhatsApp</span><span class="pill-btn ghost">Viber</span><span class="go">↗</span></span>
+      </a>
+      <a class="ai-strip" href="#ai" data-ai-jump>
+        <span class="ai-icon">✦</span>
+        <span class="min0"><span class="ai-strip-title">{t.aiCardTitle}</span><span class="ai-strip-body">{t.aiCardBody}</span></span>
+        <span class="btn btn-dark">{t.startAI} →</span>
+      </a>
+    </div>
+  </section>
+
+  <Regions regions={regions} />
+  <Concierge items={items} regions={regions} />
+  <NikolaSection areas={areas} testimonials={testimonials?.items || []} />
+</Base>

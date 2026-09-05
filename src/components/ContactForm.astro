@@ -1,0 +1,19 @@
+---
+import { T } from '../lib/i18n.js';
+const { listing = null, sage = true } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+---
+<form class="contact-form" method="post" action="/api/contact" data-contact>
+  <input type="hidden" name="lang" value={lang}>
+  {listing && <input type="hidden" name="listingId" value={listing.id} />}
+  {listing && <input type="hidden" name="listingRef" value={listing.ref} />}
+  {listing && <input type="hidden" name="listingTitle" value={listing.title} />}
+  <input type="text" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+  <label><span class="sr-only">{t.fName}</span><input name="name" placeholder={t.fName} required maxlength="120" autocomplete="name"></label>
+  <label><span class="sr-only">{t.fPhone}</span><input name="contact" placeholder={t.fPhone} required maxlength="160" autocomplete="tel"></label>
+  <label><span class="sr-only">{listing ? t.fMsg : t.fMsgHome}</span><textarea name="message" rows="3" placeholder={listing ? t.fMsg : t.fMsgHome} maxlength="3000"></textarea></label>
+  <button type="submit" class:list={['btn', sage ? 'btn-sage' : 'btn-dark']}>{t.fSend}</button>
+  <p class="form-status" role="status" aria-live="polite"></p>
+  <p class="form-note">{t.fNote}</p>
+</form>

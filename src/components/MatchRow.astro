@@ -1,0 +1,15 @@
+---
+const { item: m, badge = '', best = false, dim = false } = Astro.props;
+---
+<a class:list={['match', { dim }]} href={m.url}>
+  {m.img ? <img class="match-img" src={m.img} alt="" loading="lazy" width="264" height="184" /> : <div class="match-img noimg" />}
+  <div class="min0">
+    <div class="match-price">{m.price}</div>
+    <div class="match-title">{m.title} · {m.place}</div>
+    <div class="match-tags">{m.tags.map((tg) => <span>{tg}</span>)}</div>
+  </div>
+  <div class="match-side">
+    {badge && <span class:list={['badge', { sage: best }]}>{badge}</span>}
+    <span class="go">↗</span>
+  </div>
+</a>

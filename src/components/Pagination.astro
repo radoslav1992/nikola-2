@@ -1,0 +1,18 @@
+---
+import { T } from '../lib/i18n.js';
+const { page, pages, buildHref } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const nums = [];
+for (let p = 1; p <= pages; p++) {
+  if (p === 1 || p === pages || Math.abs(p - page) <= 2) nums.push(p);
+  else if (nums[nums.length - 1] !== '…') nums.push('…');
+}
+---
+{pages > 1 && (
+  <nav class="pagination" aria-label={t.page}>
+    {page > 1 ? <a href={buildHref(page - 1)} rel="prev">{t.pagePrev}</a> : <span class="disabled">{t.pagePrev}</span>}
+    {nums.map((n) => (n === '…' ? <span class="ellipsis">…</span> : n === page ? <span class="current" aria-current="page">{n}</span> : <a href={buildHref(n)}>{n}</a>))}
+    {page < pages ? <a href={buildHref(page + 1)} rel="next">{t.pageNext}</a> : <span class="disabled">{t.pageNext}</span>}
+  </nav>
+)}

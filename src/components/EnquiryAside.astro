@@ -1,0 +1,27 @@
+---
+/** Sticky enquiry card on the property page (design: "floating enquiry"). */
+import { T, AGENT, telHref, waLink, viberLink } from '../lib/i18n.js';
+import ContactForm from './ContactForm.astro';
+const { listing = null } = Astro.props;
+const lang = Astro.locals.lang || 'bg';
+const t = T[lang];
+const waText = listing
+  ? (lang === 'en' ? `Hello, I am interested in property ${listing.ref} (${listing.title}) — niimoti.com` : `Здравейте, интересувам се от имот ${listing.ref} (${listing.title}) — niimoti.com`)
+  : (lang === 'en' ? 'Hello, I found you on niimoti.com' : 'Здравейте, намерих ви в niimoti.com');
+---
+<aside class="enquiry" id="contact">
+  <div class="enquiry-head">
+    <img class="avatar" src="/img/agent.jpg" alt={AGENT.name[lang]} width="64" height="64" loading="lazy">
+    <div>
+      <div class="enquiry-name">{AGENT.name[lang]}</div>
+      <div class="muted small">{AGENT.role[lang]}</div>
+    </div>
+  </div>
+  <div class="enquiry-actions">
+    <a class="btn btn-dark" href={telHref(AGENT.mobile)}>{t.call}</a>
+    <a class="btn btn-sand" href={waLink(waText)} target="_blank" rel="noopener">WhatsApp</a>
+    <a class="btn btn-outline" href={viberLink()}>Viber</a>
+  </div>
+  <hr>
+  <ContactForm listing={listing} />
+</aside>
